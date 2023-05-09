@@ -1,2 +1,2 @@
 # WITH
-# 1. Spring project commit 하기
+# 1. front-End, Back-End Project 생성
