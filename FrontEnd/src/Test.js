@@ -13,10 +13,15 @@ const App = () => {
     const [text, setText] = useState("");
     const sendData = () => {
         Alert.alert(text);
-        axios.get('/user?ID=12345')
-          .then(function (response) {
+        axios({
+         url : 'http://yline.ddns.net:8080/test/new',
+         method : 'post',
+         data : {
+           text : "text입니다5"
+         }
+        }).then(function (response) {
             Alert.alert("통신 성공");
-            console.log(response);
+            console.log(response.data.id);
           })
           .catch(function (error) {
             Alert.alert("통신 오류");
