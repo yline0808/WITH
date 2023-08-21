@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
 
-    inputEmail: {
+    ShortInput: {
         backgroundColor: '#FFFFFF',
         width: '55%',
         height: 48,

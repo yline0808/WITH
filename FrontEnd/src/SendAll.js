@@ -40,7 +40,9 @@ const SendAll = forwardRef((props, ref) => {
                 password : JoinData.pw,
                 name : JoinData.name,
                 phone : JoinData.phoneNo,
-                address : JoinData.address,
+                addressMain : JoinData.addressMain,
+                addressDetail : JoinData.addressDetail,
+                zonecode : JoinData.zonecode,
                 birthDate : JoinData.birthDate,
             };
 
@@ -62,6 +64,24 @@ const SendAll = forwardRef((props, ref) => {
             };
 
             axiosSend(url,method,headers,data,'VerificationCodeSend');
+        },
+
+        async VerificationCodeCheckSend() {
+
+            let VerificationCodeCheckData = JSON.parse(await AsyncStorage.getItem("VerificationCodeCheck"));
+            console.log(VerificationCodeCheckData);
+
+            let url = "";
+            let method = "";
+            let headers = {
+                Authorization : "",
+            };
+            let data = {
+                email : VerificationCodeCheckData.email,
+                verificationCode : VerificationCodeCheckData.verificationCode,
+            };
+
+            axiosSend(url,method,headers,data,'VerificationCodeCheck');
         },
 
         async FindSend(){
@@ -114,11 +134,21 @@ const SendAll = forwardRef((props, ref) => {
             break;
 
             case 'Join' :
+                Alert.alert('회원가입 완료되었습니다.');
                 navigation.navigate("Login");
             break;
 
             case 'Find' :
+                Alert.alert('입력하신 이메일로 새로운 비밀번호를 전송하였습니다.');
                 navigation.navigate("Login");
+            break;
+
+            case 'VerificationCodeSend' :
+                Alert.alert('입력하신 이메일로 인증번호를 전송하였습니다.');
+            break;
+
+            case 'VerificationCodeCheck' :
+                //인증확인, 실패 여부 alert
             break;
             }
         })
