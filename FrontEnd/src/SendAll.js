@@ -4,15 +4,20 @@ import {
     Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-const SendAll = forwardRef((props, ref) => {
+const SendAll = forwardRef((props, ref)=> {
+
+    const navigation = useNavigation();
+
     useImperativeHandle(ref, () => ({
         async LoginSend() {
 
             let LoginData = JSON.parse(await AsyncStorage.getItem("Login"));
             console.log(LoginData);
 
-            let url = "http://yline.ddns.net:8080/api/v1/auth/authenticate";
+            let url = "http://yline.iptime.org:18080/api/v1/auth/authenticate";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -26,11 +31,10 @@ const SendAll = forwardRef((props, ref) => {
         },
 
         async JoinSend() {
-
             let JoinData = JSON.parse(await AsyncStorage.getItem("Join"));
             console.log(JoinData);
 
-            let url = "http://yline.ddns.net:8080/api/v1/auth/register";
+            let url = "http://yline.iptime.org:18080/api/v1/auth/register";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -42,7 +46,7 @@ const SendAll = forwardRef((props, ref) => {
                 phone : JoinData.phoneNo,
                 addressMain : JoinData.addressMain,
                 addressDetail : JoinData.addressDetail,
-                zonecode : JoinData.zonecode,
+                zoneCode : JoinData.zonecode,
                 birthDate : JoinData.birthDate,
             };
 
@@ -54,10 +58,10 @@ const SendAll = forwardRef((props, ref) => {
             let VerificationCodeSendData = JSON.parse(await AsyncStorage.getItem("VerificationCodeSend"));
             console.log(VerificationCodeSendData);
 
-            let url = "";
-            let method = "";
+            let url = "http://yline.iptime.org:18080/api/v1/authInfo/sendAuthCode";
+            let method = "POST";
             let headers = {
-                Authorization : "",
+                //Authorization : "",
             };
             let data = {
                 email : VerificationCodeSendData.email,
@@ -71,14 +75,14 @@ const SendAll = forwardRef((props, ref) => {
             let VerificationCodeCheckData = JSON.parse(await AsyncStorage.getItem("VerificationCodeCheck"));
             console.log(VerificationCodeCheckData);
 
-            let url = "";
-            let method = "";
+            let url = "http://yline.iptime.org:18080/api/v1/authInfo/isValid";
+            let method = "POST";
             let headers = {
-                Authorization : "",
+                //Authorization : "",
             };
             let data = {
                 email : VerificationCodeCheckData.email,
-                verificationCode : VerificationCodeCheckData.verificationCode,
+                code : VerificationCodeCheckData.verificationCode,
             };
 
             axiosSend(url,method,headers,data,'VerificationCodeCheck');
@@ -89,18 +93,39 @@ const SendAll = forwardRef((props, ref) => {
             let FindData = JSON.parse(await AsyncStorage.getItem("Find"));
             console.log(FindData);
 
-            let url = "http://yline.ddns.net:8080/api/v1/auth/register";
+            let url = "http://yline.iptime.org:18080/api/v1/account/sendPwd";
             let method = "POST";
             let headers = {
                 //Authorization : "",
             };
             let data = {
                 email : FindData.email,
-                name : FindData.name,
-                phone : FindData.phoneNo,
+                //name : FindData.name,
+                //phone : FindData.phoneNo,
+                //birthDate : FindData.birthDate,
             };
 
             axiosSend(url,method,headers,data,'Find');
+        },
+
+        async SendContractSend() {
+
+            let SendContractSendData = JSON.parse(await AsyncStorage.getItem("SendContract"));
+            console.log(SendContractSendData);
+
+            let url = "";
+            let method = "POST";
+            let headers = {
+                Authorization : AsyncStorage.getItem('Token'),
+            };
+            let data = {
+                to : SendContractSendData.to,
+                from : SendContractSendData.from,
+                subject : SendContractSendData.subject,
+                contents : SendContractSendData.contents,
+            };
+
+            axiosSend(url,method,headers,data,'SendContract');
         },
     }));
 
@@ -120,17 +145,23 @@ const SendAll = forwardRef((props, ref) => {
             Alert.alert("통신 성공");
             console.log(response);
 
-            const obj = JSON.parse(response);
-
-            AsyncStorage.setItem('Token', obj.token);
-
-            AsyncStorage.getItem('Token', (err, result) => {
-                console.log(result);
-            });
-
             switch(func){
             case 'Login' :
+                //const obj = JSON.parse(response.data);
+                const token = response.data.token;
 
+                AsyncStorage.setItem('Token', token);
+                AsyncStorage.setItem('UserId', data.email);
+
+                console.log(token);
+                console.log(data.email + "로그인");
+
+                navigation.navigate("SendContract");
+                /*
+                AsyncStorage.getItem('Token', (err, result) => {
+                    console.log(result);
+                });
+                */
             break;
 
             case 'Join' :
@@ -145,16 +176,50 @@ const SendAll = forwardRef((props, ref) => {
 
             case 'VerificationCodeSend' :
                 Alert.alert('입력하신 이메일로 인증번호를 전송하였습니다.');
+                navigation.navigate("Join",{errorYN : 'N'});
             break;
 
             case 'VerificationCodeCheck' :
-                //인증확인, 실패 여부 alert
+                Alert.alert('인증 성공하였습니다.');
+                navigation.navigate("Join",{verificationCodeYN : false});
+            break;
+
+            case 'SendContract' :
+                Alert.alert('전송하였습니다.');
+                //navigation.navigate("Join",{verificationCodeYN : false});
             break;
             }
         })
         .catch(function (error) {
             Alert.alert("통신 오류");
             console.log(error);
+
+            switch(func){
+            case 'Login' :
+                Alert.alert("로그인 오류");
+            break;
+
+            case 'Join' :
+                Alert.alert("회원가입 오류");
+            break;
+
+            case 'Find' :
+                Alert.alert("비밀번호 찾기 오류");
+            break;
+
+            case 'VerificationCodeSend' :
+                Alert.alert("인증번호 송신 오류");
+                navigation.navigate("Join",{errorYN : 'Y'});
+            break;
+
+            case 'VerificationCodeCheck' :
+                Alert.alert("인증번호 확인 오류");
+            break;
+
+            case 'VerificationCodeCheck' :
+                Alert.alert("전송 실패");
+            break;
+            }
         });
     };
 });

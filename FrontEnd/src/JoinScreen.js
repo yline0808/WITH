@@ -20,15 +20,27 @@ import SendAll from "./SendAll";
 export default function LoginScreen({ navigation, route }: any) {
 //const JoinScreen = () => {
     const childRef = useRef();
-    console.log(route.params);
+    //console.log( "route.params : "+ route.params);
     let zonecode = '';
     let addressMain = '';
     let defaultAddress = '';
+    let showCodeChange = '';
+    let errorYN = '';
+    let verificationCodeYN = true;
     if(route.params !== undefined) {
         zonecode = route.params.zonecode;
         addressMain = route.params.address;
         defaultAddress = route.params.defaultAddress;
+        errorYN = route.params.errorYN;
+        route.params.errorYN = '';
+        verificationCodeYN = route.params.verificationCodeYN;
+        console.log(verificationCodeYN);
     }
+    /*
+    if(route.ErrorData !== undefined){
+        showCodeChange = route.ErrorData.Error;
+        console.log("error" + showCodeChange);
+    }*/
 
     const [email, setEmail] = useState("");
     const [pw, setPw] = useState("");
@@ -57,47 +69,48 @@ export default function LoginScreen({ navigation, route }: any) {
     const setShowCodeData = (val) => setShowCode(val);
     const setVerificationCodeData = (val) => setVerificationCode(val);
 
+    if(errorYN == 'N'){
+        Alert.alert("성공!!");
+        setShowCodeData(true);
+        setMinutes(3);
+        setSeconds(0);
+        setSendMailYNData(false);
+        errorYN = '';
+    }else if(errorYN == 'Y'){
+        Alert.alert('오류!!');
+        errorYN = '';
+    }
+
+    if(!verificationCodeYN){
+        setShowCodeData(false); //시간 안가게 하는 용도
+        setSendMailYN(false); //이메일 창 잠그는 용도
+    }
+
     useEffect(() =>{
-        const interval = setInterval(() =>{
-            if(minutes >= 0 && seconds >= 0) setSeconds(prevSeconds => prevSeconds-1);
-            if(seconds === 0){
-                if(minutes === 0  && seconds === 0){
-                    setShowCodeData(false);
-                    setSendMailYN(true);
-                    Alert.alert('시간이 초과되었습니다.\n재전송 하시기 바랍니다.');
-                }else{
-                    setMinutes((prevMinutes) => prevMinutes - 1);
-                    setSeconds(59);
+        const interval = setInterval(() => {
+            if(showCode){
+                if(minutes >= 0 && seconds >= 0) setSeconds(prevSeconds => prevSeconds-1);
+                if(seconds === 0){
+                    if(minutes === 0  && seconds === 0){
+                        setShowCodeData(false);
+                        setSendMailYN(true);
+                        Alert.alert('시간이 초과되었습니다.\n재전송 하시기 바랍니다.');
+                    }else{
+                        setMinutes((prevMinutes) => prevMinutes - 1);
+                        setSeconds(59);
+                    }
                 }
             }
         }, 1000);
         return () => clearInterval(interval);
-    }, [seconds]);
+    }, [seconds,showCode]);
 
     const SendEmail = () => {
 
         if(!sendMailYN){
-            Alert.alert(minutes + '분 ' + seconds.toString().padStart(2,'0') + '초 후에 다시 요청할 수 있습니다.');
+            Alert.alert((minutes != 0 ? minutes + '분 ' : '') + seconds.toString().padStart(2,'0') + '초 후에 다시 요청할 수 있습니다.');
             return;
         }
-        /*
-        reactNative 메일발송
-        Mailer.sendMail({
-            mailhost: "smtp.gmail.com",
-            port: "465",
-            ssl: true, // optional. if false, then TLS is enabled. Its true by default in android. In iOS TLS/SSL is determined automatically, and this field doesn't affect anything
-            username: "cowithus74@gmail.com",
-            password: "withus1995!@",
-            fromName: "WITH", // optional
-            replyTo: "cowithus74@gmail.com", // optional
-            recipients: "wake4545@gmail.com",
-            bcc: [], // optional
-            subject: "Code",
-            htmlBody: "<h1>Verification Code</h1><p>[111111]</p>",
-            attachmentPaths: [], // optional
-            attachmentNames: [],
-        });
-        */
 
         if (email === '' || email === null) {
             Alert.alert('이메일이 입력되지 않았습니다.');
@@ -107,20 +120,13 @@ export default function LoginScreen({ navigation, route }: any) {
               email: email,
             }));
 
-            /*
-            SendAll.setProps = {
-                "email" : email,
-                "pw" : pw,
-            };
-            */
-
             childRef.current.VerificationCodeSend();
 
-            setShowCodeData(true);
-            setMinutes(3);
-            setSeconds(0);
-            setSendMailYN(false);
-            ///navigation.navigate('SendAll');
+            //setShowCode(true);
+            //setMinutes(3);
+            //setSeconds(0);
+            //setSendMailYN(false);
+            //navigation.navigate('SendAll');
         }
         return;
     }
@@ -132,6 +138,8 @@ export default function LoginScreen({ navigation, route }: any) {
         //인증번호 확인 체크 추가 필요
         if (email === '' || email === null) {
             Alert.alert('이메일이 입력되지 않았습니다.');
+        } else if (verificationCodeYN) {
+            Alert.alert('인증번호 전송 후 확인이 필요합니다.');
         } else if (pw === '' || pw === null) {
             Alert.alert('비밀번호가 입력되지 않았습니다.');
         } else if (pwChk === '' || pwChk === null) {
@@ -145,6 +153,7 @@ export default function LoginScreen({ navigation, route }: any) {
         } else if (phoneNo === '' || phoneNo === null) {
             Alert.alert('전화번호가 입력되지 않았습니다.');
         } else if (addressMain === '' || addressMain === null) {
+            console.log(addressMain);
             Alert.alert('주소가 입력되지 않았습니다.');
         }  else if (addressDetail === '' || addressDetail === null) {
             Alert.alert('상세주소가 입력되지 않았습니다.');
@@ -152,9 +161,9 @@ export default function LoginScreen({ navigation, route }: any) {
             Alert.alert('우편번호가 입력되지 않았습니다.');
         } */else if (birthDate === '' || birthDate === null) {
             Alert.alert('생년월일이 입력되지 않았습니다.');
-        } else if ( defaultAddress === '' || defaultAddress === null) {
+        }/* else if ( defaultAddress === '' || defaultAddress === null) {
             Alert.alert('주소가 입력되지 않았습니다.');
-        } else {
+        }*/ else {
             AsyncStorage.setItem('Join', JSON.stringify({
               email: email,
               pw: pw,
@@ -235,6 +244,7 @@ export default function LoginScreen({ navigation, route }: any) {
                     style={styles.DoubleShortInput}
                     placeholder={'Verification Code'}
                     onChangeText={setVerificationCodeData}
+                    editable={verificationCodeYN}
                 />
                 <View style={styles.timerView}>
                     <Text style={styles.timer}>{minutes.toString().padStart(2,'0')}:{seconds.toString().padStart(2,'0')}</Text>
@@ -247,12 +257,14 @@ export default function LoginScreen({ navigation, route }: any) {
             <TextInput
                 style={styles.input}
                 placeholder={'Password'}
+                secureTextEntry={true}
                 onChangeText={setPwData}
             />
             <Text style={styles.TextStyle}>Confirm Password</Text>
             <TextInput
                 style={styles.input}
                 placeholder={'Confirm Password'}
+                secureTextEntry={true}
                 onChangeText={setPwChkData}
             />
             <Text style={styles.TextStyle}>Name</Text>

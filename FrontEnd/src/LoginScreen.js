@@ -80,16 +80,12 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     const loadRememberId = async () => AsyncStorage.getItem('rememberId', (err, result) => {
-                                                   const UserInfo = JSON.parse(result);
-                                                   setEmail(UserInfo.email);
-                                                   setSelection(UserInfo.rememberYN);
-                                               });{
-        AsyncStorage.getItem('rememberId', (err, result) => {
+        if(result){
             const UserInfo = JSON.parse(result);
             setEmail(UserInfo.email);
             setSelection(UserInfo.rememberYN);
-        });
-    }
+        }
+    });
 
     useEffect(() => {
         loadRememberId();
@@ -111,6 +107,7 @@ export default function LoginScreen({ navigation }: any) {
             <TextInput
                 style={styles.input}
                 placeholder={'Password'}
+                secureTextEntry={true}
                 onChangeText={setPwData}
             />
             <View style={styles.checkboxContainer}>

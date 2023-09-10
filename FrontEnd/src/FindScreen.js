@@ -45,6 +45,7 @@ export default function FindScreen({ navigation }: any) {
               email: email,
               name: name,
               phoneNo : phoneNo,
+              birthDate : birthDate,
             }));
 
             /*
