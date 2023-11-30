@@ -28,13 +28,18 @@ export default function LoginScreen({ navigation, route }: any) {
     let errorYN = '';
     let verificationCodeYN = true;
     if(route.params !== undefined) {
-        zonecode = route.params.zonecode;
-        addressMain = route.params.address;
-        defaultAddress = route.params.defaultAddress;
-        errorYN = route.params.errorYN;
-        route.params.errorYN = '';
-        verificationCodeYN = route.params.verificationCodeYN;
-        console.log(verificationCodeYN);
+        if(route.params.address !== undefined){
+            zonecode = route.params.zonecode;
+            addressMain = route.params.address;
+            defaultAddress = route.params.defaultAddress;
+        }
+        if(route.params.errorYN !== undefined){
+            errorYN = route.params.errorYN;
+            route.params.errorYN = '';
+        }
+        if(route.params.verificationCodeYN !== undefined){
+            verificationCodeYN = route.params.verificationCodeYN;
+        }
     }
     /*
     if(route.ErrorData !== undefined){
@@ -69,22 +74,42 @@ export default function LoginScreen({ navigation, route }: any) {
     const setShowCodeData = (val) => setShowCode(val);
     const setVerificationCodeData = (val) => setVerificationCode(val);
 
+    useEffect(() =>{
+        if(!verificationCodeYN){
+            setShowCodeData(false); //시간 안가게 하는 용도
+            setSendMailYN(false); //이메일 창 잠그는 용도
+        }
+    }, [verificationCodeYN]);
+
+    useEffect(() =>{
+        if(errorYN == 'N'){
+            Alert.alert("성공!!");
+            setShowCodeData(true);
+            setMinutes(3);
+            setSeconds(0);
+            setSendMailYN(false);
+            errorYN = '';
+        }else if(errorYN == 'Y'){
+            Alert.alert('오류!!');
+            setShowCodeData(false);
+            setSendMailYN(true);
+            errorYN = '';
+        }
+    }, [errorYN]);
+
+    /*
     if(errorYN == 'N'){
         Alert.alert("성공!!");
         setShowCodeData(true);
         setMinutes(3);
         setSeconds(0);
-        setSendMailYNData(false);
+        setSendMailYN(false);
         errorYN = '';
     }else if(errorYN == 'Y'){
         Alert.alert('오류!!');
         errorYN = '';
     }
-
-    if(!verificationCodeYN){
-        setShowCodeData(false); //시간 안가게 하는 용도
-        setSendMailYN(false); //이메일 창 잠그는 용도
-    }
+    */
 
     useEffect(() =>{
         const interval = setInterval(() => {
@@ -106,6 +131,11 @@ export default function LoginScreen({ navigation, route }: any) {
     }, [seconds,showCode]);
 
     const SendEmail = () => {
+
+         if(!verificationCodeYN){
+             Alert.alert('인증완료하였습니다.');
+             return;
+         }
 
         if(!sendMailYN){
             Alert.alert((minutes != 0 ? minutes + '분 ' : '') + seconds.toString().padStart(2,'0') + '초 후에 다시 요청할 수 있습니다.');
@@ -138,7 +168,7 @@ export default function LoginScreen({ navigation, route }: any) {
         //인증번호 확인 체크 추가 필요
         if (email === '' || email === null) {
             Alert.alert('이메일이 입력되지 않았습니다.');
-        } else if (verificationCodeYN) {
+        } else if (!verificationCodeYN) {
             Alert.alert('인증번호 전송 후 확인이 필요합니다.');
         } else if (pw === '' || pw === null) {
             Alert.alert('비밀번호가 입력되지 않았습니다.');

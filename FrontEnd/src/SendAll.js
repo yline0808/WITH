@@ -17,7 +17,8 @@ const SendAll = forwardRef((props, ref)=> {
             let LoginData = JSON.parse(await AsyncStorage.getItem("Login"));
             console.log(LoginData);
 
-            let url = "http://yline.iptime.org:18080/api/v1/auth/authenticate";
+            //let url = "http://yline.synology.me:18081/api/v1/auth/authenticate";
+            let url = "http://yline.ddns.net:18080/api/v1/auth/authenticate";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -34,7 +35,7 @@ const SendAll = forwardRef((props, ref)=> {
             let JoinData = JSON.parse(await AsyncStorage.getItem("Join"));
             console.log(JoinData);
 
-            let url = "http://yline.iptime.org:18080/api/v1/auth/register";
+            let url = "http://yline.synology.me:18081/api/v1/auth/register";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -58,7 +59,7 @@ const SendAll = forwardRef((props, ref)=> {
             let VerificationCodeSendData = JSON.parse(await AsyncStorage.getItem("VerificationCodeSend"));
             console.log(VerificationCodeSendData);
 
-            let url = "http://yline.iptime.org:18080/api/v1/authInfo/sendAuthCode";
+            let url = "http://yline.synology.me:18081/api/v1/authInfo/sendAuthCode";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -75,7 +76,7 @@ const SendAll = forwardRef((props, ref)=> {
             let VerificationCodeCheckData = JSON.parse(await AsyncStorage.getItem("VerificationCodeCheck"));
             console.log(VerificationCodeCheckData);
 
-            let url = "http://yline.iptime.org:18080/api/v1/authInfo/isValid";
+            let url = "http://yline.synology.me:18081/api/v1/authInfo/isValid";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -93,7 +94,7 @@ const SendAll = forwardRef((props, ref)=> {
             let FindData = JSON.parse(await AsyncStorage.getItem("Find"));
             console.log(FindData);
 
-            let url = "http://yline.iptime.org:18080/api/v1/account/sendPwd";
+            let url = "http://yline.synology.me:18081/api/v1/account/sendPwd";
             let method = "POST";
             let headers = {
                 //Authorization : "",
@@ -108,33 +109,96 @@ const SendAll = forwardRef((props, ref)=> {
             axiosSend(url,method,headers,data,'Find');
         },
 
-        async SendContractSend() {
+        async ContractSend() {
 
-            let SendContractSendData = JSON.parse(await AsyncStorage.getItem("SendContract"));
-            console.log(SendContractSendData);
+            let ContractSendData = JSON.parse(await AsyncStorage.getItem("ContractSend"));
+            console.log(ContractSendData);
 
-            let url = "";
-            let method = "POST";
-            let headers = {
-                Authorization : AsyncStorage.getItem('Token'),
-            };
-            let data = {
-                to : SendContractSendData.to,
-                from : SendContractSendData.from,
-                subject : SendContractSendData.subject,
-                contents : SendContractSendData.contents,
-            };
+            let Token = "";
+            AsyncStorage.getItem('Token', (err, result) => {
+                if(result){
+                    Token = 'Bearer ' + result;
 
-            axiosSend(url,method,headers,data,'SendContract');
+                    //let url = "http://yline.synology.me:18081/api/v1/contract";
+                    let url = "http://yline.ddns.net:18080/api/v1/contract";
+                    let method = "POST";
+                    let headers = {
+                        Authorization : Token,
+                    };
+                    let data = {
+                        receivers : ContractSendData.to.trim().split(","),
+                        title : ContractSendData.subject,
+                        content : ContractSendData.contents,
+                        //Files : ContractSendData.imageFile,
+                    };
+
+                    axiosSend(url,method,headers,data,'ContractSend');
+                }
+            });
+        },
+
+        async FileSend() {
+
+            let FileSendData = JSON.parse(await AsyncStorage.getItem("FileSend"));
+            //console.log(FileSendData);
+
+            let body = new FormData();
+
+            //body.append('files',FileSendData.imageFile);
+            body.append('contractId', FileSendData.contractId);
+
+            for(const file of FileSendData.imageFile){
+                body.append('files',file);
+            }
+
+            let Token = "";
+            AsyncStorage.getItem('Token', (err, result) => {
+                if(result){
+                    Token = 'Bearer ' + result;
+
+                    let url = "http://yline.ddns.net:18080/api/v1/contractFile";
+
+                    axios.post(url,body,{
+                        headers : {
+                            Authorization : Token,
+                            //"Content-Type" : 'multipart/form-data;',
+                        }
+                    })
+                    .then(response =>{
+                        Alert.alert('파일업로드 성공');
+                    })
+                    .catch(error =>{
+                        Alert.alert('파일업로드 실패');
+                    });
+
+                    /*
+                    //let url = "";
+
+                    let method = "POST";
+                    let headers = {
+                        Authorization : Token,
+                        //"Content-Type" : 'multipart/form-data',
+                    };
+                    let data = {
+                        Files : body,
+                    };
+
+                    axiosSend(url,method,headers,data,'FileSend');
+                    */
+                }
+            });
         },
     }));
 
     const axiosSend = (url,method,headers,data,func) => {
 
+        console.log('==============================');
         console.log(url);
         console.log(method);
         console.log(headers);
         console.log(data);
+        console.log(func);
+        console.log('==============================');
 
         axios({
             url : url,
@@ -143,7 +207,7 @@ const SendAll = forwardRef((props, ref)=> {
             data : data,
         }).then(function (response) {
             Alert.alert("통신 성공");
-            console.log(response);
+            console.log("response : " + response);
 
             switch(func){
             case 'Login' :
@@ -151,12 +215,10 @@ const SendAll = forwardRef((props, ref)=> {
                 const token = response.data.token;
 
                 AsyncStorage.setItem('Token', token);
-                AsyncStorage.setItem('UserId', data.email);
 
                 console.log(token);
-                console.log(data.email + "로그인");
 
-                navigation.navigate("SendContract");
+                navigation.navigate("ContractSend");
                 /*
                 AsyncStorage.getItem('Token', (err, result) => {
                     console.log(result);
@@ -184,9 +246,18 @@ const SendAll = forwardRef((props, ref)=> {
                 navigation.navigate("Join",{verificationCodeYN : false});
             break;
 
-            case 'SendContract' :
-                Alert.alert('전송하였습니다.');
-                //navigation.navigate("Join",{verificationCodeYN : false});
+            case 'ContractSend' :
+                Alert.alert('계약서를 전송하였습니다.');
+
+                for(var key in response.data){
+                    console.log("key : " + key + "/" + response.data[key]);
+                    navigation.navigate("ContractSend",{contractId : response.data[key]});
+                }
+            break;
+
+            case 'FileSend' :
+                Alert.alert('파일을 저장하였습니다.');
+                //메인화면으로 이동
             break;
             }
         })
@@ -214,10 +285,15 @@ const SendAll = forwardRef((props, ref)=> {
 
             case 'VerificationCodeCheck' :
                 Alert.alert("인증번호 확인 오류");
+                navigation.navigate("Join",{verificationCodeYN : true});
             break;
 
-            case 'VerificationCodeCheck' :
+            case 'ContractSend' :
                 Alert.alert("전송 실패");
+            break;
+
+            case 'FileSend' :
+                Alert.alert("파일 저장 실패");
             break;
             }
         });

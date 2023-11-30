@@ -10,29 +10,43 @@ import {
     Alert,
     TouchableOpacity,
     Image,
+    Pressable,
 } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import AsyncStorage from '@react-native-community/async-storage';
 import SendAll from "./SendAll";
+import {launchImageLibrary} from 'react-native-image-picker';
 
-export default function SendContractScreen({ navigation }: any) {
+export default function ContractSendScreen({ navigation, route }: any) {
     const childRef = useRef();
-
-    let UserId = AsyncStorage.getItem('UserId');
+    const [responseFile, setResponseFile] = useState([]);
+    const [imageFile, setImageFile] = useState([]);
 
     const [to, setTo] = useState("");
     const [subject, setSubject] = useState("");
-    const [from, setFrom] = useState("");
     const [contents, setContents] = useState("");
 
     const setToData = (val) => setTo(val);
     const setSubjectData = (val) => setSubject(val);
-    const setFromData = (val) => setFrom(val);
     const setContentsData = (val) => setContents(val);
 
-    if(UserId !== undefined && UserId != ''){
-        setFromData(UserId);
+    let contractId = '';
+    if(route.params !== undefined) {
+        if(route.params.contractId !== undefined){
+            contractId = route.params.contractId;
+        }
     }
+    //첫페이지 호출시 실행 안되게
+    useEffect(() =>{
+       AsyncStorage.setItem('FileSend', JSON.stringify({
+          imageFile : imageFile,
+          contractId : contractId,
+        }));
+
+        childRef.current.FileSend();
+
+        contractId = '';
+    }, [contractId]);
 
     const send = () => {
 
@@ -41,32 +55,52 @@ export default function SendContractScreen({ navigation }: any) {
         } else if (subject === '' || subject === null) {
             Alert.alert('제목이 입력되지 않았습니다.');
         } else {
-            AsyncStorage.setItem('SendContract', JSON.stringify({
+            AsyncStorage.setItem('ContractSend', JSON.stringify({
               to : to,
-              from : from,
               subject : subject,
-              content : content,
+              contents : contents,
             }));
 
-            childRef.current.SendContractSend();
+            childRef.current.ContractSend();
         }
         return;
     };
 
+    const onSelectImage = () => {
+
+        launchImageLibrary(
+            {
+                mediaType : 'photo',
+                maxWidth : 512,
+                maxHeight : 512,
+                includeBase64 : true
+            },
+            (response) => {
+                //console.log(response);
+
+                if(response.didCancel){
+                    console.log("Image Error : " + response.errorCode);
+                }else{
+                    setResponseFile([...responseFile,response]);
+                    setImageFile([response.assets[0].base64,...imageFile]);
+                }
+            }
+        )
+    }
+
+    const onRemoveImage = (uri) => {
+        setResponseFile(responseFile.filter(responseFile => responseFile.assets[0] !== uri));
+        setImageFile(imageFile.filter(imageFile => imageFile != uri.base64));
+    }
+
     return (
         <View style={styles.main}>
+            <SendAll ref={childRef}></SendAll>
             <Text style={styles.TextStyle}>To</Text>
             <TextInput
                 style={styles.input}
                 placeholder={'To'}
                 onChangeText={setToData}
-            />
-            <Text style={styles.TextStyle}>From</Text>
-            <TextInput
-                style={styles.input}
-                placeholder={'From'}
-                onChangeText={setFromData}
-                editable={false}
             />
             <Text style={styles.TextStyle}>Subject</Text>
             <TextInput
@@ -82,11 +116,43 @@ export default function SendContractScreen({ navigation }: any) {
                 multiline={true}
                 textAlignVertical="top"
             />
-            <View style={styles.btnContainer}>
-                <TouchableOpacity style={styles.btnLogin} onPress={send}>
-                    <Text style={styles.loginFont}>Send</Text>
-                </TouchableOpacity>
+            <View style={{
+                    flexDirection:'row',
+                    marginLeft : '40%' ,
+                    marginRight : '8%' ,
+                    marginBottom : '3%' ,
+                    alignSelf : 'center' ,
+                    justifyContent : 'center',
+                }}>
+                <View style={styles.btnContainer}>
+                    <TouchableOpacity style={styles.btnLogin} onPress={()=>onSelectImage()}>
+                        <Text style={styles.loginFont}>이미지 추가</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.btnContainer}>
+                    <TouchableOpacity style={styles.btnLogin} onPress={send}>
+                        <Text style={styles.loginFont}>Send</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+            {
+            responseFile.map(responseFile =>(
+                <View style={styles.imageArea}>
+                    <Image
+                        style={{
+                            width : '40%',
+                            height : 70,
+                            borderWidth : 1,
+                        }}
+                        resizeMode="contain"
+                        source={responseFile ? {uri : responseFile.assets[0].uri} : 0}
+                        key={responseFile.index}
+                    />
+                    <TouchableOpacity onPress={()=>onRemoveImage( responseFile.assets[0] )} style={styles.removeImage}>
+                        <Text style={{fontSize:12}}>이미지 삭제</Text>
+                    </TouchableOpacity>
+                </View>
+            ))}
         </View>
     );
 };
@@ -158,7 +224,6 @@ const styles = StyleSheet.create({
     btnContainer: {
       alignItems:'flex-end',
       marginTop : 10,
-      marginRight : 30,
     },
     inputContainer: {
       flexDirection: 'row',
@@ -203,6 +268,34 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign:'center',
         alignItems:'center',
+    },
+
+    imageArea : {
+        alignSelf: 'center',
+        justifyContent: "center",
+        width : '80%',
+        height : '10%',
+        //flex : 1,
+        flexDirection : 'row',
+    },
+
+    removeImage:{
+        backgroundColor: 'white',
+        width : '30%',
+        height : '27%',
+        margin : '6%',
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    BtnAll : {
+        alignSelf: 'center',
+        justifyContent: "center",
+        width : '80%',
+        height : '10%',
+        flex : 1,
+        flexDirection : 'row',
     },
 })
 

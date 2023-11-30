@@ -28,6 +28,25 @@ export default function LoginScreen({ navigation }: any) {
 
     const login = () => {
 
+        if(isSelected){
+            if('' == email || undefined === email){
+                alert("Input Email");
+                setSelection(false);
+                return;
+            }
+            setSelection(true);
+
+            AsyncStorage.setItem('rememberId',JSON.stringify({'email': email, 'rememberYN': true}), () => {
+              console.log('Save Email');
+            });
+        }else{
+            setSelection(false);
+
+            AsyncStorage.setItem('rememberId',JSON.stringify({'email': '', 'rememberYN': false}), () => {
+                console.log('UnSave Email');
+            });
+        }
+
         //console.log(email);
         //console.log(pw);
 
@@ -49,8 +68,10 @@ export default function LoginScreen({ navigation }: any) {
             };
             */
 
-            childRef.current.LoginSend();
+            //childRef.current.LoginSend();
             ///navigation.navigate('SendAll');
+
+            navigation.navigate("ContractSend");
         }
         return;
     }
@@ -58,25 +79,7 @@ export default function LoginScreen({ navigation }: any) {
     const rememberId = (val) => {
 
         setSelection(val);
-
-        if(!isSelected){
-            if('' == email || undefined === email){
-                alert("Input Email");
-                setSelection(false);
-                return;
-            }
-            setSelection(true);
-
-            AsyncStorage.setItem('rememberId',JSON.stringify({'email': email, 'rememberYN': true}), () => {
-              console.log('Save Email');
-            });
-        }else{
-            setSelection(false);
-
-            AsyncStorage.setItem('rememberId',JSON.stringify({'email': '', 'rememberYN': false}), () => {
-                console.log('UnSave Email');
-            });
-        }
+        console.log(isSelected);
     }
 
     const loadRememberId = async () => AsyncStorage.getItem('rememberId', (err, result) => {
